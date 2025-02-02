@@ -1,0 +1,89 @@
+#include <iostream>
+#include <unordered_map>
+
+using namespace std;
+
+class LRUCache {
+public:
+    LRUCache(int capacity) {
+        this->capacity = capacity;
+    }
+
+    int get(int key) {
+        if (cache.find(key) == cache.end()) {
+            return -1;
+        }
+        moveToFront(key);
+        return cache[key]->value;
+    }
+
+    void put(int key, int value) {
+        if (cache.find(key) != cache.end()) {
+            cache[key]->value = value;
+            moveToFront(key);
+        } else {
+            if (cache.size() >= capacity) {
+                removeLeastRecentlyUsed();
+            }
+            addToFront(key, value);
+        }
+    }
+
+private:
+    struct Node {
+        int key, value;
+        Node* prev;
+        Node* next;
+        Node(int k, int v) : key(k), value(v), prev(nullptr), next(nullptr) {}
+    };
+
+    unordered_map<int, Node*> cache;
+    int capacity;
+    Node* head = new Node(0, 0);
+    Node* tail = new Node(0, 0);
+
+    void addToFront(int key, int value) {
+        Node* newNode = new Node(key, value);
+        cache[key] = newNode;
+
+        newNode->next = head->next;
+        if (head->next) head->next->prev = newNode;
+        head->next = newNode;
+        newNode->prev = head;
+
+        if (newNode->next == nullptr) tail->prev = newNode;
+    }
+
+    void moveToFront(int key) {
+        Node* node = cache[key];
+
+        node->prev->next = node->next;
+        if (node->next) node->next->prev = node->prev;
+
+        node->next = head->next;
+        if (head->next) head->next->prev = node;
+        head->next = node;
+        node->prev = head;
+
+        if (node->next == nullptr) tail->prev = node;
+    }
+
+    void removeLeastRecentlyUsed() {
+        Node* lru = tail->prev;
+        cache.erase(lru->key);
+
+        if (lru->prev) lru->prev->next = tail;
+        tail->prev = lru->prev;
+
+        delete lru;
+    }
+};
+
+int main() {
+    LRUCache cache(3);
+
+    cache.put(1, 1);
+    cache.put(2, 2);
+    cache.put(3, 3);
+
+    cout <<
